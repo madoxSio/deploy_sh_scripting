@@ -16,7 +16,7 @@ echo "on génere la clé privée de la CA"
 if [ -f $CA_DIR/ca.key ] || [ -f ]; then
     rm  -f $CA_DIR/ca.key $CA_DIR/Ca.crt
 fi
-openssl genpkey -algorithm RSA -pkopt rsa_keygen_bits:4096 \
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 \
     -aes256 -passout pass:$CA_PASS \
     -out $CA_DIR/ca.key
 
