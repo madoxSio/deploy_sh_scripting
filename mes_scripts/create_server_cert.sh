@@ -49,7 +49,6 @@ req_extensions = v3_req
 subjectAltName = @alt_names
 [alt_names]
 DNS.1 = $DOMAIN
-IP.1 = $IP_VM
 EOF
 
 # 3. Générer la clé privée du serveur (SANS mot de passe)
