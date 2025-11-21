@@ -3,3 +3,4 @@ dox_key
 dox_key.pub
 ca.crt
 admin.p12
+debug.log
