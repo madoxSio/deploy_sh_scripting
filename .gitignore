@@ -1,3 +1,4 @@
 ./pki
 dox_key
 dox_key.pub
+ca.crt

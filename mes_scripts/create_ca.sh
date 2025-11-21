@@ -16,10 +16,7 @@ echo "on génere la clé privée de la CA"
 if [ -f $CA_DIR/ca.key ] || [ -f ]; then
     rm  -f $CA_DIR/ca.key $CA_DIR/Ca.crt
 fi
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 \
-    -aes256 -passout pass:$CA_PASS \
-    -out $CA_DIR/ca.key
-
+openssl genrsa -aes256 -passout pass:$CA_PASS -out $CA_DIR/ca.key 4096
 
 # #[ $? -ne 0 ] → signifie “si le code de retour n’est pas égal à 0”
 # if [ $? -ne 0 ]; then

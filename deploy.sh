@@ -19,7 +19,7 @@ if ! source variables.conf; then
     exit 1
 fi
 
-echo ">>> DÉBUT DU DÉPLOIEMENT - IP VM: $IP_VM <<<"
+echo ">>> DÉBUT DU DÉPLOIEMENT <<<"
 
 # === ÉTAPE 1: Installation des Paquets ===
 echo "--- [1/8] Installation des paquets (Apache, MariaDB, PHP...) ---"
@@ -43,10 +43,15 @@ bash mes_scripts/create_server_cert.sh dolibarr
 bash mes_scripts/create_server_cert.sh glpi
 
 echo "--- [5/8] Appel du script de création du certificat client ---"
-bash mes_scripts/create_client_cert.sh
+bash mes_scripts/create_clients_cert.sh
 
 # === ÉTAPE 4: Installation des Applications ===
 echo "--- [6/8] Téléchargement et installation de Dolibarr & GLPI ---"
+# AJOUTE CE BLOC DE NETTOYAGE (si jamais il existe déjà):
+echo "Nettoyage des dossiers d'installation existants..."
+sudo rm -rf /var/www/html/dolibarr
+sudo rm -rf /var/www/html/glpi
+
 # Dolibarr (ajuste le lien si besoin)
 echo "Installation de Dolibarr..."
 wget https://github.com/Dolibarr/dolibarr/archive/refs/tags/19.0.2.zip -O /tmp/dolibarr.zip
@@ -71,9 +76,18 @@ chmod 644 $SERVER_DIR/*
 # === ÉTAPE 5: Configuration d'Apache ===
 echo "--- [7/8] Configuration d'Apache (Auth & Sites SSL) ---"
 
-# Point 3 du sujet: Bloquer la page par défaut
-echo "Mise en place de l'authentification basique..."
-htpasswd -bc /etc/apache2/.htpasswd $APACHE_AUTH_USER $APACHE_AUTH_PASS
+echo "Création du fichier d'authentification et ajout de l'utilisateur $APACHE_USER..."
+
+# 1. Créer le fichier .htpasswd s'il n'existe pas (garantie de la cible)
+touch /etc/apache2/.htpasswd
+
+# 2. Utiliser printf pour injecter le mot de passe sur l'entrée standard (le pipe |)
+# L'option -i dit à htpasswd de lire depuis cette entrée.
+# On utilise bien les guillemets doubles pour s'assurer que les variables passent sans être cassées.
+
+printf '%s\n' "$APACHE_PASS" | htpasswd -B -i /etc/apache2/.htpasswd "$APACHE_USER"
+
+echo "CHECK: Fin htpasswd"
 cp configs/000-default.conf /etc/apache2/sites-available/000-default.conf
 
 # Point 2 du sujet: Mettre en place les certificats
@@ -81,8 +95,8 @@ cp configs/000-default.conf /etc/apache2/sites-available/000-default.conf
 export DOMAIN_DOLIBARR DOMAIN_GLPI SERVER_DIR CA_DIR
 # "envsubst" va lire les templates et remplacer $DOMAIN_DOLIBARR par sa valeur
 echo "Création des vhosts SSL..."
-envsubst < configs/apache_dolibarr.conf > /etc/apache2/sites-available/$DOMAIN_DOLIBARR.conf
-envsubst < configs/apache_glpi.conf > /etc/apache2/sites-available/$DOMAIN_GLPI.conf
+envsubst < config/apache_dolibarr.conf > /etc/apache2/sites-available/$DOMAIN_DOLIBARR.conf
+envsubst < config/apache_glpi.conf > /etc/apache2/sites-available/$DOMAIN_GLPI.conf
 
 # === ÉTAPE 6: Activation Finale ===
 echo "--- [8/8] Activation des modules et redémarrage ---"
